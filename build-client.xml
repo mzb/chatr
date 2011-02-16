@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="chatr" default="jar">
+	<property name="jar-name" value="chatr-client.jar" />
+  <property name="build-dir" value="bin" />
+  <property name="deploy-dir" value="deploy" />
+	<property name="main-class" value="chatr.client.Application" />
+  <property name="src-dir" value="src" />
+
+  <target name="clean">
+    <delete failonerror="false">
+      <fileset dir="${build-dir}" includes="**/*"/>
+    </delete>
+  </target>
+
+  <target name="compile" description="">
+    <javac srcdir="${src-dir}" destdir="${build-dir}"/>
+  </target>
+
+  <target name="jar" description="Create JAR" depends="compile">
+    <jar destfile="${jar-name}" basedir="${build-dir}" includes="**/*.class" />
+	</target>
+
+</project>
