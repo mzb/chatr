@@ -1,5 +1,8 @@
 package chatr.server;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import chatr.Connection;
 import chatr.events.MessageReceived;
 import chatr.events.NicknameNotAvailable;
@@ -18,22 +21,25 @@ import chatr.requests.SendMessage;
 import chatr.server.RoomRepository.RoomNameNotAvailableException;
 
 public class ClientHandler extends RequestHandler implements Runnable {
+  
+  private static final Logger log = Logger.getLogger("ClientHandler");
 
 	private Connection connection;
 	private boolean running;
 	private ActiveRooms activeRooms;
 	private RoomRepository roomRepository;
+	private MessageRepository messageRepository;
 
 	public ClientHandler(Connection connection, ActiveRooms activeRooms,
-			RoomRepository roomRepository) {
+			RoomRepository roomRepository, MessageRepository messageRepository) {
 		this.connection = connection;
 		this.activeRooms = activeRooms;
 		this.roomRepository = roomRepository;
+		this.messageRepository = messageRepository;
 	}
 
 	@Override
-	public void handle(JoinRoom request) throws RoomRepository.Error,
-			Connection.Error {
+	public void handle(JoinRoom request) throws Repository.Error, Connection.Error {
 		Room room = activeRooms.find(request.getRoomName(), request.getPassword());
 		try {
 			if (room == null) {
@@ -59,47 +65,45 @@ public class ClientHandler extends RequestHandler implements Runnable {
 	}
 
 	@Override
-	public void handle(SendMessage request) {
+	public void handle(SendMessage request) throws Repository.Error {
 		activeRooms.broadcast(new MessageReceived(request.getRoomName(), 
 		    request.getMessage()));
+		messageRepository.save(request.getRoomName(), request.getMessage());
 	}
 
 	@Override
-	public void handle(CreateRoom request) throws Connection.Error,
-			RoomRepository.Error {
-		log(request + ": name=" + request.getRoomName() + ", password="
-				+ request.getPassword());
+	public void handle(CreateRoom request) throws Connection.Error, Repository.Error {
 		try {
 			roomRepository.addRoom(request.getRoomName(), request.getPassword());
-			log(request + ": room added");
 			connection.put(new RoomCreated(request.getRoomName()));
 		} catch (RoomNameNotAvailableException e) {
 			connection.put(new RoomNameNotAvailable(request.getRoomName()));
 		}
 	}
 
-	@Override
-	public void run() {
-		Request request = null;
-		try {
-			while (running) {
-				request = (Request) connection.get();
-				request.handle(this);
-			}
-		} catch (Exception e) {
-			if (e instanceof Connection.Error) {
-				log("Connection lost!");
-				stop();
-			} else {
-				log("ServerError: " + e.getMessage());
-				try {
-					connection.put(new ServerError(e.getMessage()));
-				} catch (Connection.Error e1) {
-					e1.printStackTrace();
-				}
-			}
-		}
-	}
+  @Override public void run() {
+    Request request = null;
+    while (running) {
+      try {
+        request = (Request) connection.get();
+        log.info("Received request " + request);
+        request.handle(this);
+      } catch (Exception e) {
+        if (e instanceof Connection.Error) {
+          log.log(Level.WARNING, "Connection lost", e);
+          stop();
+        } else {
+          log.log(Level.SEVERE, "ServerError", e);
+          try {
+            connection.put(new ServerError(e.getMessage()));
+          } catch (Connection.Error ee) {
+            log.log(Level.SEVERE, "Cannot send ServerError to client", ee);
+            stop();
+          }
+        }
+      }
+    }
+  }
 
 	public void start() {
 		running = true;
@@ -110,13 +114,9 @@ public class ClientHandler extends RequestHandler implements Runnable {
 		running = false;
 		try {
 			connection.close();
-			log("connection closed.");
+			log.info("connection closed.");
 		} catch (Connection.Error e) {
 			e.printStackTrace();
 		}
-	}
-
-	private void log(String msg) {
-		System.out.println("[ClientHandler#" + connection + "] " + msg);
 	}
 }

@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 @SuppressWarnings("serial")
 public class GUI extends JFrame implements ActionListener {
@@ -64,25 +65,29 @@ public class GUI extends JFrame implements ActionListener {
 	}
 
 	private void display() {
-		setTitle("chatr");
-		setSize(300, 450);
-		Container content = getContentPane();
-		content.setLayout(new BorderLayout());
-
-		messagesLog = new JTextArea(7, 7);
-		messagesLog.setEditable(false);
-		messagesLog.setLineWrap(true);
-		messagesLog.setWrapStyleWord(true);
-		content.add(new JScrollPane(messagesLog), "Center");
-
-		inputField = new JTextField(25);
-		inputField.addActionListener(this);
-		JPanel inputPanel = new JPanel(new FlowLayout());
-		inputPanel.add(inputField);
-		content.add(inputPanel, "South");
-
-		setVisible(true);
-		inputField.requestFocus();
+	  SwingUtilities.invokeLater(new Runnable() {
+      @Override public void run() {
+    		setTitle("chatr");
+    		setSize(300, 450);
+    		Container content = getContentPane();
+    		content.setLayout(new BorderLayout());
+    
+    		messagesLog = new JTextArea(7, 7);
+    		messagesLog.setEditable(false);
+    		messagesLog.setLineWrap(true);
+    		messagesLog.setWrapStyleWord(true);
+    		content.add(new JScrollPane(messagesLog), "Center");
+    
+    		inputField = new JTextField(25);
+    		inputField.addActionListener(GUI.this);
+    		JPanel inputPanel = new JPanel(new FlowLayout());
+    		inputPanel.add(inputField);
+    		content.add(inputPanel, "South");
+    
+    		setVisible(true);
+    		inputField.requestFocus();
+      }
+	  });
 	}
 
   public void setStatus(String status) {
@@ -92,11 +97,4 @@ public class GUI extends JFrame implements ActionListener {
       setTitle("chatr");
     }
   }
-
-	// private void error(Exception e, String msg) {
-	// msg = (msg != null) ? msg + "\n(" + e + ")" : e.toString();
-	// JOptionPane.showMessageDialog(this,
-	// msg, "Ups, wystąpił błąd...",
-	// JOptionPane.ERROR_MESSAGE);
-	// }
 }

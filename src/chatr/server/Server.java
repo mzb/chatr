@@ -2,29 +2,54 @@ package chatr.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import chatr.Connection;
+import chatr.server.Repository.Error;
 
 public class Server {
+  
+  private static final Logger log = Logger.getLogger("Server");
 
 	private ActiveRooms activeRooms = new ActiveRooms();
-	private RoomRepository roomRepository = new RoomRepository();
+	private RoomRepository roomRepository;
+	private MessageRepository messageRepository;
 	
-	public Server(int port) throws IOException, ClassNotFoundException {
-		ServerSocket socket = new ServerSocket(port);
-		log("listening at localhost:" + port);
+	public Server(int port) {
+		ServerSocket socket = null;
+    try {
+      socket = new ServerSocket(port);
+    } catch (IOException e) {
+      abort(e);
+    }
+		log.info("listening at localhost:" + port);
+		
+		try {
+      roomRepository = new RoomRepository();
+      messageRepository = new MessageRepository();
+    } catch (Repository.Error e) {
+      abort(e);
+    }
 
-		boolean listening = true;
-		while (listening) {
-			Connection connection = new Connection(socket.accept());
-			log("new connection from " + connection);
-			new ClientHandler(connection, activeRooms, roomRepository).start();
-		}
-
-		socket.close();
+    try {
+  		boolean listening = true;
+  		while (listening) {
+  			Connection connection = new Connection(socket.accept());
+  			log.info("new connection from " + connection);
+  			ClientHandler handler = new ClientHandler(connection, 
+  			    activeRooms, roomRepository, messageRepository); 
+  			handler.start();
+  		}
+  
+  		socket.close();
+    } catch (IOException e) {
+      abort(e);
+    }
 	}
 	
-	private void log(String msg) {
-		System.out.println("[Server] " + msg);
+	private void abort(Exception e) {
+	  log.log(Level.SEVERE, "ServerError", e);
+    System.exit(1);
 	}
 }
