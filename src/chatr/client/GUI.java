@@ -54,10 +54,20 @@ public class GUI extends JFrame implements ActionListener {
 	}
 
 	public void addMessage(String msg) {
-		messagesLog.append(String.format("(%s) %s\n",
-		    new SimpleDateFormat("HH:mm").format(new Date()),
-		    msg));
-		messagesLog.setCaretPosition(messagesLog.getText().length());
+		addDatedMessage(msg, new Date(), "HH:mm");
+	}
+	
+	public void addDatedMessage(String msg, Date date) {
+	  addDatedMessage(msg, date, "dd.MM.yyyy HH:mm");
+	}
+	
+	public void addDatedMessage(String msg, Date date, String fmt) {
+	  addToMessageLog(String.format("(%s) %s\n", new SimpleDateFormat(fmt).format(date), msg));
+	}
+	
+	public void addToMessageLog(String text) {
+	  messagesLog.append(text);
+    messagesLog.setCaretPosition(messagesLog.getText().length());
 	}
 	
 	public void blockInput() {

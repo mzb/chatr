@@ -33,4 +33,8 @@ public class EventHandler {
 	public void handle(RoomNameNotAvailable event) {
 
 	}
+
+  public void handle(Messages event) {
+    
+  }
 }

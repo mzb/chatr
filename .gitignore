@@ -1,8 +1,7 @@
 bin/
 doc/
 db/*.db
-chatr-client.jar
-chatr-server.jar
+*.jar
 
 .classpath
 .project

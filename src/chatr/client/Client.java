@@ -1,5 +1,7 @@
 package chatr.client;
 
+import java.util.Date;
+
 import chatr.Connection;
 import chatr.Message;
 import chatr.events.EventHandler;
@@ -7,6 +9,7 @@ import chatr.requests.CreateRoom;
 import chatr.requests.JoinRoom;
 import chatr.requests.LeaveRoom;
 import chatr.requests.SendMessage;
+import chatr.requests.ShowMessages;
 
 public class Client {
 
@@ -37,6 +40,10 @@ public class Client {
 	public void sendMessage(String roomName, Message message)
 			throws Connection.Error {
 		connection.put(new SendMessage(roomName, message));
+	}
+	
+	public void showMessages(String roomName, Date sent) throws Connection.Error {
+	  connection.put(new ShowMessages(roomName, sent));
 	}
 
 	public void disconnect() throws Connection.Error {

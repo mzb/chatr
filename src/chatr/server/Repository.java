@@ -103,6 +103,13 @@ public abstract class Repository {
         throw new Repository.Error(e);
       }
     }
+    public long getLong(String column) throws Repository.Error {
+      try {
+        return rs.getLong(column);
+      } catch (SQLException e) {
+        throw new Repository.Error(e);
+      }
+    }
     public void close() throws Repository.Error { 
       try {
         rs.close();

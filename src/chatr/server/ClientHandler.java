@@ -1,10 +1,13 @@
 package chatr.server;
 
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import chatr.Connection;
+import chatr.Message;
 import chatr.events.MessageReceived;
+import chatr.events.Messages;
 import chatr.events.NicknameNotAvailable;
 import chatr.events.RoomCreated;
 import chatr.events.RoomJoined;
@@ -18,6 +21,7 @@ import chatr.requests.LeaveRoom;
 import chatr.requests.Request;
 import chatr.requests.RequestHandler;
 import chatr.requests.SendMessage;
+import chatr.requests.ShowMessages;
 import chatr.server.RoomRepository.RoomNameNotAvailableException;
 
 public class ClientHandler extends RequestHandler implements Runnable {
@@ -79,6 +83,13 @@ public class ClientHandler extends RequestHandler implements Runnable {
 		} catch (RoomNameNotAvailableException e) {
 			connection.put(new RoomNameNotAvailable(request.getRoomName()));
 		}
+	}
+	
+	@Override
+	public void handle(ShowMessages request) throws Repository.Error, Connection.Error {
+	  List<Message> messages = messageRepository.find(request.getRoomName(), request.getSent());
+	  log.info(messages.toString());
+	  connection.put(new Messages(messages));
 	}
 
   @Override public void run() {

@@ -1,10 +1,14 @@
 package chatr.client;
 
+import java.util.logging.Logger;
+
 import chatr.Connection;
 import chatr.events.Event;
 import chatr.events.EventHandler;
 
 public class ServerListener implements Runnable {
+  
+  private static final Logger log = Logger.getLogger("ServerListener");
 
 	private Connection connection;
 	private EventHandler eventHandler;
@@ -21,6 +25,7 @@ public class ServerListener implements Runnable {
 		try {
 			while (running) {
 				response = (Event) connection.get();
+				log.info("Received event " + response.getClass().getSimpleName());
 				response.handle(eventHandler);
 			}
 		} catch (Exception e) {

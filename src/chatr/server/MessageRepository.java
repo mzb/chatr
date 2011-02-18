@@ -29,14 +29,15 @@ public class MessageRepository extends Repository {
       bindings = new Object[]{ roomName };
     }
     QueryResults results = query(
-        "select * from " + name() + " where (" + conditions + ") order by timestamp desc", 
+        "select * from " + name() + " where (" + conditions + ") order by timestamp asc", 
         bindings);
     
     List<Message> messages = new ArrayList<Message>();
     while (results.next()) {
       String senderName = (String) results.get("sender");
       String body = (String) results.get("body");
-      messages.add(new Message(senderName, body, sent));
+      long timestamp = results.getLong("timestamp") * 1000;
+      messages.add(new Message(senderName, body, new Date(timestamp)));
     }
     results.close();
     

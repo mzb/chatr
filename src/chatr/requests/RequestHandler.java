@@ -17,4 +17,8 @@ public class RequestHandler {
 	public void handle(CreateRoom request) throws Exception {
 
 	}
+
+  public void handle(ShowMessages request) throws Exception {
+    
+  }
 }

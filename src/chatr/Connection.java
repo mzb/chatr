@@ -50,6 +50,7 @@ public class Connection {
       }
       output.writeObject(data);
       output.flush();
+      output.reset();
     } catch (IOException e) {
       throw new Connection.Error(e.getMessage());
     }

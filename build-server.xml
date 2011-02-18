@@ -1,23 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="chatr" default="jar">
-	<property name="jar-name" value="chatr-server.jar" />
   <property name="build-dir" value="bin" />
-  <property name="deploy-dir" value="deploy" />
-	<property name="main-class" value="chatr.server.Main" />
+  <property name="deploy-dir" value="." />
   <property name="src-dir" value="src" />
+  <property name="lib-dir" value="lib" />
+  <property name="jar-name" value="chatr-server.jar" />
+  <property name="main-class" value="chatr.server.Main" />
+  
+  <target name="compile" description="">
+    <javac srcdir="${src-dir}" destdir="${build-dir}" includeantruntime="false" />
+  </target>
+
+  <target name="jar" description="Create JAR and MANIFEST.MF" depends="compile">
+    <pathconvert property="classpath" pathsep=" ">
+      <mapper>
+	    <chainedmapper>
+		  <flattenmapper />
+          <globmapper from="*" to="${lib-dir}/*" />
+		</chainedmapper>
+	  </mapper>
+	  <path>
+	    <fileset dir="${lib-dir}">
+		  <include name="**/*.jar" />
+	    </fileset>
+	  </path>
+    </pathconvert>
+
+    <jar jarfile="${deploy-dir}/${jar-name}" basedir="${build-dir}">
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+	    <attribute name="Main-Class" value="${main-class}" />
+	    <attribute name="Class-Path" value="${classpath}" />
+	  </manifest>
+    </jar>
+  </target>
 
   <target name="clean">
     <delete failonerror="false">
       <fileset dir="${build-dir}" includes="**/*"/>
     </delete>
   </target>
-
-  <target name="compile" description="">
-    <javac srcdir="${src-dir}" destdir="${build-dir}"/>
-  </target>
-
-  <target name="jar" description="Create JAR" depends="compile">
-    <jar destfile="${jar-name}" basedir="${build-dir}" includes="**/*.class" />
-	</target>
 
 </project>

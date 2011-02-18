@@ -1,24 +1,22 @@
 package chatr.client;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import chatr.Connection;
 import chatr.Message;
-import chatr.events.EventHandler;
-import chatr.events.MessageReceived;
-import chatr.events.NicknameNotAvailable;
-import chatr.events.RoomCreated;
-import chatr.events.RoomJoined;
-import chatr.events.RoomLeft;
-import chatr.events.RoomNameNotAvailable;
-import chatr.events.RoomNotFound;
-import chatr.events.ServerError;
+import chatr.events.*;
 
 public class Application extends EventHandler {
 
-	private static final Logger logger = Logger.getLogger("chatr");
+	private static final Logger log = Logger.getLogger("chatr");
 
 	private String connectionHost = "localhost";
 	private int connectionPort = 3000;
@@ -52,7 +50,7 @@ public class Application extends EventHandler {
 	}
 
 	public void close() {
-		logger.info("Closing...");
+		log.info("Closing...");
 		disconnect();
 		System.exit(0);
 	}
@@ -104,14 +102,39 @@ public class Application extends EventHandler {
 	@Override
 	public void handle(MessageReceived event) {
 	  Message msg = event.getMessage();
-	  gui.addMessage(String.format("%s: %s", 
-	      msg.getSenderName(), msg.getBody()));
+	  gui.addMessage(String.format("%s: %s", msg.getSenderName(), msg.getBody()));
 	}
 	
 	@Override
 	public void handle(NicknameNotAvailable event) {
 	  gui.addNotice(String.format("Nick `%s' jest już zajęty", 
 	      event.getNickname()));
+	}
+	
+	@Override
+	public void handle(Messages event) {
+	  Map<String, ArrayList<Message>> messagesByDate = new TreeMap<String, ArrayList<Message>>();
+	  for (Message message : event.getMessages()) {
+	    String sent = new SimpleDateFormat("dd.MM.yyyy").format(message.getSent());
+	    ArrayList<Message> msgs = messagesByDate.get(sent);
+	    if (msgs == null) {
+	      msgs = new ArrayList<Message>();
+	      messagesByDate.put(sent, msgs);
+	    }
+	    msgs.add(message);
+	  }
+	  gui.addToMessageLog("\n");
+	  Iterator<Map.Entry<String, ArrayList<Message>>> i = messagesByDate.entrySet().iterator();
+	  while (i.hasNext()) {
+	    Map.Entry<String, ArrayList<Message>> e = i.next();
+	    gui.addToMessageLog(String.format("====== %s ======\n", e.getKey()));
+	    ArrayList<Message> messages = e.getValue();
+	    for (Message message : messages) {
+	      gui.addDatedMessage(String.format("%s: %s", 
+	          message.getSenderName(), message.getBody()), message.getSent(), "HH:mm");
+	    }
+	  }
+	  gui.addToMessageLog("\n");
 	}
 	
 	@Override
@@ -174,6 +197,30 @@ public class Application extends EventHandler {
         }
       }
     });
+    
+    commands.put("msgs", new Command() {
+      private final String SENT_FORMAT = "dd.MM.yyyy";
+      public void run(String[] args) throws Exception {
+        if (currentRoom == null) {
+          gui.addError("Nie jesteś obecnie w żadnym pokoju");
+          return;
+        }
+        if (client != null) {
+          String sentArg = args.length > 0 ? args[0] : null;
+          Date sent = null;
+          if (sentArg != null) {
+            SimpleDateFormat df = new SimpleDateFormat(SENT_FORMAT);
+            try {
+              sent = df.parse(sentArg);
+            } catch (ParseException e) {
+              gui.addNotice(String.format("msgs: Data powinna byc w formacie `%s'", SENT_FORMAT));
+              return;
+            }
+          }
+          client.showMessages(currentRoom.roomName, sent);
+        }
+      }
+    });
   }
 	
 	protected void handleCommand(String commandLine) {
@@ -209,12 +256,12 @@ public class Application extends EventHandler {
 
 	protected void connect() {
 		try {
-			logger.info(String.format("Connecting to %s:%d...", connectionHost,
+			log.info(String.format("Connecting to %s:%d...", connectionHost,
 					connectionPort));
 			client = new Client(this, connectionHost, connectionPort);
 		} catch (Connection.Error e) {
 		  gui.blockInput();
-			logger.warning("Unable to connect");
+			log.warning("Unable to connect");
 			gui.addError(String.format("Nie można połączyć się z serwerem (%s:%d)",
 					connectionHost, connectionPort));
 		}
@@ -226,7 +273,7 @@ public class Application extends EventHandler {
 			  if (currentRoom != null) {
 			    handleCommand("leave");
 			  }
-				logger.info("Disconnecting...");
+				log.info("Disconnecting...");
 				client.disconnect();
 			} catch (Connection.Error e) {
 			}
