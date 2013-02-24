@@ -2,7 +2,9 @@ bin/
 doc/
 db/*.db
 *.jar
+*.zip
 
 .classpath
 .project
 .settings/
+nbproject/
